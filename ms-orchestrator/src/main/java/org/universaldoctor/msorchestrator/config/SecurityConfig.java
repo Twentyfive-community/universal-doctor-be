@@ -21,17 +21,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
-                        .requestMatchers("/login-vero").permitAll()
                         .requestMatchers(
                                 "/swagger-ui.html",          // questa è la pagina iniziale
                                 "/swagger-ui/**",            // risorse JS, CSS, ecc.
                                 "/v3/api-docs/**"            // OpenAPI JSON
                         ).permitAll()
-                        .requestMatchers("/testTwo/auth/**").permitAll()
-                        .requestMatchers("/ping").permitAll()
                         .requestMatchers("/profession/**").permitAll()
-                        .requestMatchers("/testTwo/test-body").hasRole("employee")
-                        .requestMatchers("/testOne/**").hasRole("boss")
+                        .requestMatchers("/keycloak/login").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->
