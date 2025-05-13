@@ -14,12 +14,19 @@ public class KeycloakRoute extends RouteBuilder {
 
     @Override
     public void configure() throws Exception {
-        String url = dbUrl + ENDPOINT+"/login";
+        String url = dbUrl + ENDPOINT;
+
         from("direct:login")
                 .marshal().json()
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
-                .to(url);
+                .to(url+"/login");
+
+        from("direct:register")
+                .marshal().json()
+                .setHeader(Exchange.HTTP_METHOD, constant("POST"))
+                .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
+                .to(url+"/register");
 
     }
 }

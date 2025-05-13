@@ -22,12 +22,14 @@ public class SecurityConfig {
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers(
-                                "/swagger-ui.html",          // questa è la pagina iniziale
-                                "/swagger-ui/**",            // risorse JS, CSS, ecc.
-                                "/v3/api-docs/**"            // OpenAPI JSON
-                        ).permitAll()
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**")
+                        .permitAll()
                         .requestMatchers("/profession/**").permitAll()
-                        .requestMatchers("/keycloak/login").permitAll()
+                        .requestMatchers("/keycloak/login",
+                                         "keycloak/register")
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->

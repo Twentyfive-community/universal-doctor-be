@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
 
 @RestController
@@ -18,5 +19,9 @@ public class KeycloakController {
     public String login(@RequestBody TokenRequest tokenRequest){
         return producerTemplate.requestBody("direct:login", tokenRequest, String.class);
 
+    }
+    @PostMapping("/register")
+    public String register(@RequestBody AddMsUserReq addMsUserReq){
+        return producerTemplate.requestBody("direct:register", addMsUserReq, String.class);
     }
 }
