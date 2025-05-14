@@ -2,6 +2,8 @@ package org.universaldoctor.msuser.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.KeycloakUser;
+import exception.TokenRetrievalException;
+import lombok.extern.slf4j.Slf4j;
 import model.Doctor;
 import model.MsUser;
 import model.Patient;
@@ -18,12 +20,14 @@ import org.universaldoctor.msuser.mapper.PatientMapper;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
 
+import java.nio.file.AccessDeniedException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class KeycloakService {
     @Autowired
     private KeycloakClient keycloakClient;
@@ -59,11 +63,18 @@ public class KeycloakService {
     }
 
     public String getToken(TokenRequest tokenRequest) {
-        Object response = keycloakClient.getToken(tokenRequest);
+        log.info("request: {}", tokenRequest);
+        try {
+            Object response = keycloakClient.getToken(tokenRequest);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map responseMap = objectMapper.convertValue(response, Map.class);
-        return (String) responseMap.get("access_token");
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map responseMap = objectMapper.convertValue(response, Map.class);
+            return (String) responseMap.get("access_token");
+        } catch (Exception e) {
+            log.error("error retrieving access token", e);
+            throw new TokenRetrievalException(e.getMessage());
+        }
+
     }
 
 
