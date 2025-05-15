@@ -86,22 +86,27 @@ public class KeycloakService {
 
     public void addMsUser(AddMsUserReq msUser) {
         log.info("request: {}", msUser);
-        String role ="";
-        if ((msUser.getProfessionName() == null || msUser.getProfessionName().isBlank()) && msUser.getHourlyRate() == null) {
-            log.info("adding a patient: {}", msUser);
-            role = "patient";
-            Patient patient = patientMapper.mapAddMsUserReqToPatient(msUser);
-            addMsUserToRealm(patient,role);
-            patientService.save(patient);
-        } else {
-            log.info("adding a doctor: {}", msUser);
-            //role ="doctor";
-            Profession profession = professionService.findByName(msUser.getProfessionName());
-            Doctor doctor = doctorMapper.mapAddMsUserReqToDoctor(msUser, profession);
-            //addMsUserToRealm(doctor,role);
-            doctorService.save(doctor);
+
+        String role = inferAndValidateRole(msUser);
+
+        switch (role) {
+            case "patient" -> {
+                log.info("Adding patient: {}", msUser);
+                Patient patient = patientMapper.mapAddMsUserReqToPatient(msUser);
+                addMsUserToRealm(patient, role);
+                patientService.save(patient);
+            }
+            case "doctor" -> {
+                log.info("Adding doctor: {}", msUser);
+                Profession profession = professionService.findByName(msUser.getProfessionName());
+                Doctor doctor = doctorMapper.mapAddMsUserReqToDoctor(msUser, profession);
+                addMsUserToRealm(doctor, role);
+                doctorService.save(doctor);
+            }
+            default -> throw new IllegalStateException("Unexpected role: " + role);
         }
     }
+
 
     public void addMsUserToRealm(MsUser msUser, String role) {
         log.info("adding user to realm: {}", msUser);
@@ -130,4 +135,34 @@ public class KeycloakService {
         List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
         keycloakClient.resetPassword(bearerToken, keycloakId, actions);
     }
+
+    private String inferAndValidateRole(AddMsUserReq msUser) {
+        boolean hasProfession = msUser.getProfessionName() != null && !msUser.getProfessionName().isBlank();
+
+        boolean isDoctorCandidate = hasProfession;
+        boolean isPatientCandidate = !hasProfession;
+
+        String declaredRole = msUser.getRole() != null ? msUser.getRole().trim().toLowerCase() : null;
+
+        if (declaredRole != null) {
+            switch (declaredRole) {
+                case "doctor":
+                    if (!isDoctorCandidate)
+                        throw new IllegalArgumentException("doctor needs to have a profession");
+                    return "doctor";
+                case "patient":
+                    if (!isPatientCandidate)
+                        throw new IllegalArgumentException("patient doesn't have a profession");
+                    return "patient";
+                default:
+                    throw new IllegalArgumentException("not recognizable role: " + declaredRole);
+            }
+        }
+
+        if (isDoctorCandidate) return "doctor";
+        if (isPatientCandidate) return "patient";
+
+        throw new IllegalArgumentException("not handled error in registering user");
+    }
+
 }

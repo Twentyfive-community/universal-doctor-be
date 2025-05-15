@@ -17,10 +17,7 @@ public class AddMsUserReq {
 
     //Se è un dottore, compilare anche questi
     private String professionName;
-    private Double hourlyRate;
 
 
-    private String ruoloUtente;
-    //se ruoloUtente è paziente, ma ha una professione => ERRORE!
-    //se ruoloUtente è dottore, ma non ha una professione => ERRORE!
+    private String role;
 }

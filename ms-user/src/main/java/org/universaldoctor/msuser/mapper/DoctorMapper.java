@@ -1,30 +1,17 @@
 package org.universaldoctor.msuser.mapper;
 
-import enums.Sex;
 import model.Doctor;
 import model.Profession;
-import org.springframework.stereotype.Service;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import request.keycloak.AddMsUserReq;
 
-@Service
-public class DoctorMapper {
+@Mapper(componentModel = "spring")
+public interface DoctorMapper {
 
-    //TODO MAPSTRUCT!!!!
-
-    public Doctor mapAddMsUserReqToDoctor(AddMsUserReq msUser, Profession profession) {
-        Doctor doctor = new Doctor();
-        doctor.setFirstName(msUser.getFirstName());
-        doctor.setLastName(msUser.getLastName());
-        doctor.setPhoneNumber(msUser.getPhoneNumber());
-        doctor.setAddress(msUser.getAddress());
-        doctor.setSex(Sex.valueOf(msUser.getSex()));
-        doctor.setTaxCode(msUser.getTaxCode());
-        doctor.setActive(false);
-        doctor.setEmail(msUser.getEmail());
-        doctor.setNationality(msUser.getNationality());
-        doctor.setAccepted(false);
-        doctor.setProfession(profession);
-        doctor.setHourlyRate(msUser.getHourlyRate());
-        return doctor;
-    }
+    @Mapping(target = "active", constant = "false")
+    @Mapping(target = "accepted", constant = "false")
+    @Mapping(target = "sex", expression = "java(enums.Sex.valueOf(msUser.getSex()))")
+    @Mapping(target = "profession", source = "profession")
+    Doctor mapAddMsUserReqToDoctor(AddMsUserReq msUser, Profession profession);
 }

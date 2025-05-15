@@ -2,6 +2,8 @@ package org.universaldoctor.msuser.handler;
 
 import exception.TokenRetrievalException;
 import jakarta.persistence.EntityNotFoundException;
+import org.apache.http.protocol.HTTP;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +28,14 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getMessage());
         body.put("code", 404);
         return ResponseEntity.status(404).body(body);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", ex.getMessage());
+        body.put("code", 400);
+        return ResponseEntity.status(400).body(body);
     }
 
 
