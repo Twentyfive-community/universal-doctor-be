@@ -17,7 +17,7 @@ public class SecurityConfig {
         jwtConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
 
         http
-                .csrf().disable() // <--- AGGIUNGI QUESTO
+                .csrf().disable()
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
-import response.ResponseWrapper;
 
 @RestController
 @RequestMapping("/keycloak")
@@ -19,8 +18,8 @@ public class KeycloakController extends BaseController {
     private ProducerTemplate producerTemplate;
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<String>> login(@RequestBody TokenRequest tokenRequest){
-        return ok(producerTemplate.requestBody("direct:login", tokenRequest, String.class),"User authenticated correctly");
+    public ResponseEntity<String> login(@RequestBody TokenRequest tokenRequest){
+        return ResponseEntity.ok(producerTemplate.requestBody("direct:login", tokenRequest, String.class));
 
     }
     @PostMapping("/register")

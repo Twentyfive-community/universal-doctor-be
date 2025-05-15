@@ -3,6 +3,7 @@ package org.universaldoctor.msorchestrator.routes.msuser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import exception.TokenRetrievalException;
 import org.apache.camel.Exchange;
+import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.http.base.HttpOperationFailedException;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,28 +23,35 @@ public class KeycloakRoute extends RouteBuilder {
         String url = dbUrl + ENDPOINT;
 
         onException(HttpOperationFailedException.class)
-                .handled(true)
                 .process(exchange -> {
-                    HttpOperationFailedException ex = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, HttpOperationFailedException.class);
-                    String response = ex.getResponseBody();
-                    String message;
-                    try {
-                        ObjectMapper mapper = new ObjectMapper();
-                        Map<String, Object> body = mapper.readValue(response, Map.class);
-                        message = (String) body.getOrDefault("message", "Errore autenticazione");
-                    } catch (Exception parseEx) {
-                        message = "Errore backend: risposta non leggibile";
+                    HttpOperationFailedException cause = exchange.getProperty(Exchange.EXCEPTION_CAUGHT, HttpOperationFailedException.class);
+                    String body = cause.getResponseBody();
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> map = mapper.readValue(body, Map.class);
+                    String message = (String) map.get("message");
+                    int code = (Integer) map.get("code");
+
+                    if (code == 401) {
+                        throw new TokenRetrievalException(message); // rilancia un'eccezione custom che Camel può gestire
+                    } else {
+                        throw new RuntimeException("Generic backend error: " + message);
                     }
-                    throw new TokenRetrievalException(message);
-                });
+                })
+                .log(LoggingLevel.ERROR, "Keycloak token retrieve failed")
+                .handled(true); // evita che Camel prosegua la route
+
 
         from("direct:login")
+                .log(LoggingLevel.INFO, "Keycloak token retrieving")
                 .marshal().json()
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
-                .to(url+"/login");
+                .to(url+"/login")
+                .log(LoggingLevel.INFO, "Keycloak token retrieved");
 
         from("direct:register")
+                .log(LoggingLevel.INFO, "Keycloak registering with ${body}")
                 .marshal().json()
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))

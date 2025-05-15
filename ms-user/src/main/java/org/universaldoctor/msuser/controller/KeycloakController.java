@@ -16,6 +16,7 @@ public class KeycloakController extends BaseController {
     @Autowired
     private KeycloakService keycloakService;
 
+
     @PostMapping("/login")
     public ResponseEntity<ResponseWrapper<String>> login(@RequestBody TokenRequest tokenRequest) {
         return ok(keycloakService.getToken(tokenRequest), "Login successful");
@@ -23,9 +24,15 @@ public class KeycloakController extends BaseController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseWrapper<Boolean>> addUser(@RequestBody AddMsUserReq msUser) {
-        return ok(keycloakService.addMsUser(msUser), "Register successful");
+    public ResponseEntity<ResponseWrapper<Void>> addUser(@RequestBody AddMsUserReq msUser) {
+        keycloakService.addMsUser(msUser);
+        return created("User Created Succesfully");
     }
 
+    @PutMapping("/reset-password")
+    public ResponseEntity<ResponseWrapper<Void>> resetPasswordFromEmail(@RequestParam("email") String email){
+        keycloakService.resetPasswordFromEmail(email);
+        return noContent("Email Reset Password Sent!");
+    }
 
 }

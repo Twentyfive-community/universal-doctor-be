@@ -20,7 +20,6 @@ import org.universaldoctor.msuser.mapper.PatientMapper;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
 
-import java.nio.file.AccessDeniedException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,24 +76,35 @@ public class KeycloakService {
 
     }
 
+    public void resetPasswordFromEmail(String email){
+        log.info("sending reset password request to email: {}", email);
+        String keycloakId = patientService.findKeycloakIdByEmail(email);
+        List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
+        keycloakClient.resetPassword(getAdminBearerToken(),keycloakId,actions);
+    }
 
-    public Boolean addMsUser(AddMsUserReq msUser) {
+
+    public void addMsUser(AddMsUserReq msUser) {
+        log.info("request: {}", msUser);
         String role ="";
         if ((msUser.getProfessionName() == null || msUser.getProfessionName().isBlank()) && msUser.getHourlyRate() == null) {
+            log.info("adding a patient: {}", msUser);
             role = "patient";
             Patient patient = patientMapper.mapAddMsUserReqToPatient(msUser);
             addMsUserToRealm(patient,role);
-            return patientService.save(patient) != null;
+            patientService.save(patient);
         } else {
+            log.info("adding a doctor: {}", msUser);
             //role ="doctor";
             Profession profession = professionService.findByName(msUser.getProfessionName());
             Doctor doctor = doctorMapper.mapAddMsUserReqToDoctor(msUser, profession);
             //addMsUserToRealm(doctor,role);
-            return doctorService.save(doctor) != null;
+            doctorService.save(doctor);
         }
     }
 
     public void addMsUserToRealm(MsUser msUser, String role) {
+        log.info("adding user to realm: {}", msUser);
         String bearerToken = getAdminBearerToken();
         KeycloakUser keycloakUser = keycloakMapper.createOrUpdateMsUserToRealm(msUser);
         ResponseEntity<Object> response = keycloakClient.add(bearerToken, keycloakUser);
@@ -105,6 +115,7 @@ public class KeycloakService {
     }
 
     public void addRoleToUser(String bearerToken,String keycloakId,String role) {
+        log.info("adding role to user with keycloakId: {}", keycloakId);
         List<LinkedHashMap<String, String>> rawRoles = keycloakClient.getRoles(bearerToken);
         List<RoleRepresentation> keycloakRoles = rawRoles.stream()
                 .map(KeycloakMapper::convertToRoleRepresentation)
@@ -114,6 +125,7 @@ public class KeycloakService {
     }
 
     public boolean sendPasswordResetEmail(String keycloakId) {
+        log.info("sending password reset email for keycloakId: {}", keycloakId);
         String bearerToken = getAdminBearerToken();
         // Define the actions to be executed, in this case, UPDATE_PASSWORD
         List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
@@ -122,6 +134,4 @@ public class KeycloakService {
         keycloakClient.resetPassword(bearerToken, keycloakId, actions);
         return true;
     }
-
-
 }
