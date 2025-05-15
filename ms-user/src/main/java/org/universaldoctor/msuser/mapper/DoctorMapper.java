@@ -8,6 +8,9 @@ import request.keycloak.AddMsUserReq;
 
 @Service
 public class DoctorMapper {
+
+    //TODO MAPSTRUCT!!!!
+
     public Doctor mapAddMsUserReqToDoctor(AddMsUserReq msUser, Profession profession) {
         Doctor doctor = new Doctor();
         doctor.setFirstName(msUser.getFirstName());

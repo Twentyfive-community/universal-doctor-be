@@ -2,7 +2,6 @@ package org.universaldoctor.msorchestrator.controller.msuser;
 
 import dto.BaseController;
 import org.apache.camel.ProducerTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,8 +13,12 @@ import request.keycloak.TokenRequest;
 @RestController
 @RequestMapping("/keycloak")
 public class KeycloakController extends BaseController {
-    @Autowired
-    private ProducerTemplate producerTemplate;
+
+    private final ProducerTemplate producerTemplate;
+
+    public KeycloakController(ProducerTemplate producerTemplate) {
+        this.producerTemplate = producerTemplate;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody TokenRequest tokenRequest){

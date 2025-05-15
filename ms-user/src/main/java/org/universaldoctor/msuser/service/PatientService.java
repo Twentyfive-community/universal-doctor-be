@@ -3,7 +3,6 @@ package org.universaldoctor.msuser.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import model.Patient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.universaldoctor.msuser.repository.PatientRepository;
 
@@ -11,12 +10,15 @@ import org.universaldoctor.msuser.repository.PatientRepository;
 @Slf4j
 public class PatientService {
 
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PatientRepository patientRepository;
 
-    public Boolean save(Patient patient) {
+    public PatientService(PatientRepository patientRepository) {
+        this.patientRepository = patientRepository;
+    }
+
+    public void save(Patient patient) {
         log.info("Saving patient {}", patient);
-        return patientRepository.save(patient) != null;
+        patientRepository.save(patient);
     }
 
     public String findKeycloakIdByEmail(String email) {

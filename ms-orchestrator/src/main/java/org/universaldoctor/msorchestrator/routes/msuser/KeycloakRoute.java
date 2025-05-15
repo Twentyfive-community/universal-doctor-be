@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Component
 public class KeycloakRoute extends RouteBuilder {
+
     @Value("${be.url}")
     private String dbUrl;
 
@@ -33,13 +34,13 @@ public class KeycloakRoute extends RouteBuilder {
                     int code = (Integer) map.get("code");
 
                     if (code == 401) {
-                        throw new TokenRetrievalException(message); // rilancia un'eccezione custom che Camel può gestire
+                        throw new TokenRetrievalException(message);
                     } else {
                         throw new RuntimeException("Generic backend error: " + message);
                     }
                 })
                 .log(LoggingLevel.ERROR, "Keycloak token retrieve failed")
-                .handled(true); // evita che Camel prosegua la route
+                .handled(true);
 
 
         from("direct:login")

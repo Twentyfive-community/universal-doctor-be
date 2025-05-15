@@ -1,16 +1,21 @@
 package org.universaldoctor.msuser.service;
 
+import lombok.extern.slf4j.Slf4j;
 import model.Doctor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.universaldoctor.msuser.repository.DoctorRepository;
 
 @Service
+@Slf4j
 public class DoctorService {
-    @Autowired
-    private DoctorRepository doctorRepository;
+    private final DoctorRepository doctorRepository;
 
-    public Boolean save(Doctor doctor) {
-        return doctorRepository.save(doctor) != null;
+    public DoctorService(DoctorRepository doctorRepository) {
+        this.doctorRepository = doctorRepository;
+    }
+
+    public void save(Doctor doctor) {
+        log.info("Saving doctor {}", doctor);
+        doctorRepository.save(doctor);
     }
 }

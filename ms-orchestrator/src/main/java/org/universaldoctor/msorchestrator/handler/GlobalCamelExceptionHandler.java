@@ -6,7 +6,6 @@ import org.apache.camel.http.base.HttpOperationFailedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import response.ResponseWrapper;
 
 @RestControllerAdvice
 public class GlobalCamelExceptionHandler {

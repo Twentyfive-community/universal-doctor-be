@@ -1,7 +1,7 @@
 package model;
 
-import enums.Sex;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data

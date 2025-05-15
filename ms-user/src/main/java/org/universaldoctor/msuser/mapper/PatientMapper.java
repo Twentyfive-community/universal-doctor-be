@@ -7,6 +7,7 @@ import request.keycloak.AddMsUserReq;
 
 @Service
 public class PatientMapper {
+
     public Patient mapAddMsUserReqToPatient(AddMsUserReq msUser) {
         Patient patient = new Patient();
         patient.setFirstName(msUser.getFirstName());

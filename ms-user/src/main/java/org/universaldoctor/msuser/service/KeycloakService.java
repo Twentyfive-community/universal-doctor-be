@@ -9,7 +9,6 @@ import model.MsUser;
 import model.Patient;
 import model.Profession;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -28,22 +27,14 @@ import java.util.Map;
 @Service
 @Slf4j
 public class KeycloakService {
-    @Autowired
-    private KeycloakClient keycloakClient;
 
-    @Autowired
-    private PatientService patientService;
-    @Autowired
-    private ProfessionService professionService;
-    @Autowired
-    private DoctorService doctorService;
-
-    @Autowired
-    private KeycloakMapper keycloakMapper;
-    @Autowired
-    private PatientMapper patientMapper;
-    @Autowired
-    private DoctorMapper doctorMapper;
+    private final KeycloakClient keycloakClient;
+    private final PatientService patientService;
+    private final ProfessionService professionService;
+    private final DoctorService doctorService;
+    private final KeycloakMapper keycloakMapper;
+    private final PatientMapper patientMapper;
+    private final DoctorMapper doctorMapper;
 
     @Value("${keycloak.clientId}")
     protected String clientId;
@@ -56,6 +47,16 @@ public class KeycloakService {
     @Value("${keycloak.password}")
     protected String grantType;
 
+    public KeycloakService(KeycloakClient keycloakClient, PatientService patientService, ProfessionService professionService, DoctorService doctorService, KeycloakMapper keycloakMapper, PatientMapper patientMapper, DoctorMapper doctorMapper) {
+        this.keycloakClient = keycloakClient;
+        this.patientService = patientService;
+        this.professionService = professionService;
+        this.doctorService = doctorService;
+        this.keycloakMapper = keycloakMapper;
+        this.patientMapper = patientMapper;
+        this.doctorMapper = doctorMapper;
+    }
+
     public String getAdminBearerToken() {
         TokenRequest tokenRequest = new TokenRequest(clientId, clientSecret, grantType, username, password);
         return "Bearer " + getToken(tokenRequest);
@@ -65,7 +66,6 @@ public class KeycloakService {
         log.info("request: {}", tokenRequest);
         try {
             Object response = keycloakClient.getToken(tokenRequest);
-
             ObjectMapper objectMapper = new ObjectMapper();
             Map responseMap = objectMapper.convertValue(response, Map.class);
             return (String) responseMap.get("access_token");
@@ -114,24 +114,20 @@ public class KeycloakService {
         msUser.setKeycloakId(keycloakId);
     }
 
-    public void addRoleToUser(String bearerToken,String keycloakId,String role) {
+    private void addRoleToUser(String bearerToken,String keycloakId,String role) {
         log.info("adding role to user with keycloakId: {}", keycloakId);
         List<LinkedHashMap<String, String>> rawRoles = keycloakClient.getRoles(bearerToken);
         List<RoleRepresentation> keycloakRoles = rawRoles.stream()
                 .map(KeycloakMapper::convertToRoleRepresentation)
-                .filter(keycloakRole -> keycloakRole.getName().equals(role)) // Filtra il ruolo specifico
+                .filter(keycloakRole -> keycloakRole.getName().equals(role))
                 .toList();
         keycloakClient.addRoleToUser(bearerToken, keycloakId, keycloakRoles);
     }
 
-    public boolean sendPasswordResetEmail(String keycloakId) {
+    private void sendPasswordResetEmail(String keycloakId) {
         log.info("sending password reset email for keycloakId: {}", keycloakId);
         String bearerToken = getAdminBearerToken();
-        // Define the actions to be executed, in this case, UPDATE_PASSWORD
         List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
-
-        // Call the Feign client method to send the reset email
         keycloakClient.resetPassword(bearerToken, keycloakId, actions);
-        return true;
     }
 }

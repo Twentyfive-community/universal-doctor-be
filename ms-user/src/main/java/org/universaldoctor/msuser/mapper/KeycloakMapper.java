@@ -10,6 +10,9 @@ import java.util.LinkedHashMap;
 
 @Service
 public class KeycloakMapper {
+
+    private KeycloakMapper(){}
+
     public static KeycloakUser createOrUpdateMsUserToRealm(MsUser msUser) {
         KeycloakUser user = new KeycloakUser();
         user.setEmail(msUser.getEmail());
@@ -18,7 +21,6 @@ public class KeycloakMapper {
         user.setEnabled(true);
         return user;
     }
-
 
     public static String getKeycloakIdFromResponse(ResponseEntity<Object> response) {
         String[] stringArray = response.getHeaders().get("location").get(0).split("/");
