@@ -11,11 +11,13 @@ public class UpdateMsUserReq {
     private String phoneNumber;
     private String address;
     private Sex sex;
+    private String imgUrl;
     private String taxCode;
     private String nationality;
 
     //Se è un dottore, compilare anche questi
     private String professionName;
+    private Double hourlyRate;
 
     private String role;
 }

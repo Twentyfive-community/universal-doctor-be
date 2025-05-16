@@ -6,9 +6,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.universaldoctor.msuser.service.KeycloakService;
 import request.keycloak.AddMsUserReq;
+import request.keycloak.LoginMsUserReq;
 import request.keycloak.TokenRequest;
 import request.keycloak.UpdateMsUserReq;
 import response.ResponseWrapper;
+import response.keycloak.LoginRes;
 
 
 @RestController
@@ -19,8 +21,8 @@ public class KeycloakController extends BaseController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<String>> login(@RequestBody TokenRequest tokenRequest) {
-        return ok(keycloakService.getToken(tokenRequest), "Login successful");
+    public ResponseEntity<ResponseWrapper<LoginRes>> login(@RequestBody LoginMsUserReq loginMsUserReq) {
+        return ok(keycloakService.getToken(loginMsUserReq), "Login successful");
 
     }
 

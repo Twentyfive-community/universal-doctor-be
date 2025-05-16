@@ -18,8 +18,10 @@ import org.universaldoctor.msuser.mapper.DoctorMapper;
 import org.universaldoctor.msuser.mapper.KeycloakMapper;
 import org.universaldoctor.msuser.mapper.PatientMapper;
 import request.keycloak.AddMsUserReq;
+import request.keycloak.LoginMsUserReq;
 import request.keycloak.TokenRequest;
 import request.keycloak.UpdateMsUserReq;
+import response.keycloak.LoginRes;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -38,16 +40,6 @@ public class KeycloakService {
     private final PatientMapper patientMapper;
     private final DoctorMapper doctorMapper;
 
-    @Value("${keycloak.clientId}")
-    protected String clientId;
-    @Value("${keycloak.credentials.secret}")
-    protected String clientSecret;
-    @Value("${keycloak.username}")
-    protected String username;
-    @Value("${keycloak.password}")
-    protected String password;
-    @Value("${keycloak.password}")
-    protected String grantType;
 
     public KeycloakService(KeycloakClient keycloakClient, PatientService patientService, ProfessionService professionService, DoctorService doctorService, KeycloakMapper keycloakMapper, PatientMapper patientMapper, DoctorMapper doctorMapper) {
         this.keycloakClient = keycloakClient;
@@ -60,17 +52,15 @@ public class KeycloakService {
     }
 
     public String getAdminBearerToken() {
-        TokenRequest tokenRequest = new TokenRequest(clientId, clientSecret, grantType, username, password);
-        return "Bearer " + getToken(tokenRequest);
+        LoginMsUserReq loginMsUserReq = new LoginMsUserReq("adminrealm","password");
+        return "Bearer " + getToken(loginMsUserReq).getAccessToken();
     }
 
-    public String getToken(TokenRequest tokenRequest) {
-        log.info("request: {}", tokenRequest);
+    public LoginRes getToken(LoginMsUserReq loginMsUserReq) {
+        log.info("request: {}", loginMsUserReq);
         try {
-            Object response = keycloakClient.getToken(tokenRequest);
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map responseMap = objectMapper.convertValue(response, Map.class);
-            return (String) responseMap.get("access_token");
+            TokenRequest tokenRequest = keycloakMapper.loginRequestToTokenRequest(loginMsUserReq);
+            return keycloakClient.getToken(tokenRequest);
         } catch (Exception e) {
             log.error("error retrieving access token", e);
             throw new TokenRetrievalException(e.getMessage());

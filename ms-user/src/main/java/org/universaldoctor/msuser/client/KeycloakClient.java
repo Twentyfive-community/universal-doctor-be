@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import request.keycloak.AddRealmRoleReq;
 import request.keycloak.TokenRequest;
+import response.keycloak.LoginRes;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
 public interface KeycloakClient {
 
     @PostMapping(value = "/realms/${realm}/protocol/openid-connect/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    Object getToken(@RequestBody TokenRequest params);
+    LoginRes getToken(@RequestBody TokenRequest params);
 
     @PostMapping(value = "/admin/realms/${realm}/users", produces = "application/json")
     ResponseEntity<Object> add(@RequestHeader("Authorization") String accessToken, @RequestBody UserRepresentation user);
