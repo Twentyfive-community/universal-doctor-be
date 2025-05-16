@@ -3,12 +3,10 @@ package org.universaldoctor.msorchestrator.controller.msuser;
 import dto.BaseController;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
+import response.ResponseWrapper;
 
 @RestController
 @RequestMapping("/keycloak")
@@ -28,5 +26,10 @@ public class KeycloakController extends BaseController {
     @PostMapping("/register")
     public String register(@RequestBody AddMsUserReq addMsUserReq){
         return producerTemplate.requestBody("direct:register", addMsUserReq, String.class);
+    }
+    @PutMapping("/reset-password")
+    public ResponseEntity<ResponseWrapper<Void>> resetPassword(@RequestParam("email") String email){
+        producerTemplate.requestBody("direct:resetPassword",email,String.class);
+        return noContent("email reset password sent successfully");
     }
 }

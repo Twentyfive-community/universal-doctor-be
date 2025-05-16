@@ -1,5 +1,6 @@
 package org.universaldoctor.msuser.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import model.Doctor;
 import org.springframework.stereotype.Service;
@@ -17,5 +18,9 @@ public class DoctorService {
     public void save(Doctor doctor) {
         log.info("Saving doctor {}", doctor);
         doctorRepository.save(doctor);
+    }
+
+    public Doctor findByEmail(String email) {
+        return doctorRepository.findByEmail(email).orElseThrow(()-> new EntityNotFoundException("Doctor not found with this email: " +email));
     }
 }

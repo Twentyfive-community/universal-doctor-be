@@ -44,6 +44,7 @@ public class KeycloakRoute extends RouteBuilder {
 
 
         from("direct:login")
+                .routeId("msuser-login")
                 .log(LoggingLevel.INFO, "Keycloak token retrieving")
                 .marshal().json()
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
@@ -52,11 +53,20 @@ public class KeycloakRoute extends RouteBuilder {
                 .log(LoggingLevel.INFO, "Keycloak token retrieved");
 
         from("direct:register")
+                .routeId("msuser-register")
                 .log(LoggingLevel.INFO, "Keycloak registering with ${body}")
                 .marshal().json()
                 .setHeader(Exchange.HTTP_METHOD, constant("POST"))
                 .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
                 .to(url+"/register");
+
+        from("direct:resetPassword")
+                .routeId("reset-password-route")
+                .log(LoggingLevel.INFO,"Calling reset-password with email=${body}")
+                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
+                .removeHeader(Exchange.HTTP_PATH)
+                .toD(url + "/reset-password?email=${body}")
+                .convertBodyTo(String.class);
 
     }
 }

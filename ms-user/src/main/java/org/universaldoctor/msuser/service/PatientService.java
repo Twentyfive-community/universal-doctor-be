@@ -25,4 +25,8 @@ public class PatientService {
         log.info("Find keycloakIdByEmail {}", email);
         return patientRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("KeycloakId not found with this email : " + email)).getKeycloakId();
     }
+
+    public Patient findByEmail(String email) {
+        return patientRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("Patient not found with this email : " + email));
+    }
 }

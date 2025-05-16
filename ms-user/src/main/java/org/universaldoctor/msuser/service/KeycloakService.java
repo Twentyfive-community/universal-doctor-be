@@ -12,12 +12,14 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.universaldoctor.msuser.client.KeycloakClient;
 import org.universaldoctor.msuser.mapper.DoctorMapper;
 import org.universaldoctor.msuser.mapper.KeycloakMapper;
 import org.universaldoctor.msuser.mapper.PatientMapper;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
+import request.keycloak.UpdateMsUserReq;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -83,11 +85,11 @@ public class KeycloakService {
         keycloakClient.resetPassword(getAdminBearerToken(),keycloakId,actions);
     }
 
-
+    @Transactional
     public void addMsUser(AddMsUserReq msUser) {
         log.info("request: {}", msUser);
 
-        String role = inferAndValidateRole(msUser);
+        String role = inferAndValidateRole(msUser.getRole(), msUser.getProfessionName());
 
         switch (role) {
             case "patient" -> {
@@ -107,23 +109,58 @@ public class KeycloakService {
         }
     }
 
+    @Transactional
+    public void updateUser(UpdateMsUserReq msUser) {
+        log.info("request: {}", msUser);
 
-    public void addMsUserToRealm(MsUser msUser, String role) {
+        switch (msUser.getRole()) {
+            case "patient" -> {
+                log.info("Updating patient: {}", msUser);
+                Patient patient = patientService.findByEmail(msUser.getEmail());
+                patientMapper.updateMsUserFromUpdateMsUserReq(msUser,patient);
+                updateMsUserToRealm(patient);
+                patientService.save(patient);
+            }
+            case "doctor" -> {
+                Profession profession;
+                log.info("Updating doctor: {}", msUser);
+                Doctor doctor = doctorService.findByEmail(msUser.getEmail());
+                if(msUser.getProfessionName()== null || msUser.getProfessionName().isBlank()){
+                    profession = doctor.getProfession();
+                } else {
+                    profession = professionService.findByName(msUser.getProfessionName());
+                }
+                doctorMapper.updateDoctorFromUpdateMsUserReq(msUser,doctor, profession);
+                updateMsUserToRealm(doctor);
+                doctorService.save(doctor);
+            }
+            default -> throw new IllegalStateException("Unexpected role: " + msUser.getRole());
+        }
+    }
+
+    private void addMsUserToRealm(MsUser msUser, String role) {
         log.info("adding user to realm: {}", msUser);
         String bearerToken = getAdminBearerToken();
-        KeycloakUser keycloakUser = keycloakMapper.createOrUpdateMsUserToRealm(msUser);
+        KeycloakUser keycloakUser = keycloakMapper.msUserToKeycloakUser(msUser);
         ResponseEntity<Object> response = keycloakClient.add(bearerToken, keycloakUser);
-        String keycloakId = keycloakMapper.getKeycloakIdFromResponse(response);
+        String keycloakId = getKeycloakIdFromResponse(response);
         addRoleToUser(bearerToken, keycloakId,role);
         sendPasswordResetEmail(keycloakId);
         msUser.setKeycloakId(keycloakId);
+    }
+
+    private void updateMsUserToRealm(MsUser msUser) {
+        log.info("updating user to realm: {}", msUser);
+        String bearerToken = getAdminBearerToken();
+        KeycloakUser keycloakUser = keycloakMapper.msUserToKeycloakUser(msUser);
+        keycloakClient.update(bearerToken, msUser.getKeycloakId(), keycloakUser);
     }
 
     private void addRoleToUser(String bearerToken,String keycloakId,String role) {
         log.info("adding role to user with keycloakId: {}", keycloakId);
         List<LinkedHashMap<String, String>> rawRoles = keycloakClient.getRoles(bearerToken);
         List<RoleRepresentation> keycloakRoles = rawRoles.stream()
-                .map(KeycloakMapper::convertToRoleRepresentation)
+                .map(this::convertToRoleRepresentation)
                 .filter(keycloakRole -> keycloakRole.getName().equals(role))
                 .toList();
         keycloakClient.addRoleToUser(bearerToken, keycloakId, keycloakRoles);
@@ -136,13 +173,13 @@ public class KeycloakService {
         keycloakClient.resetPassword(bearerToken, keycloakId, actions);
     }
 
-    private String inferAndValidateRole(AddMsUserReq msUser) {
-        boolean hasProfession = msUser.getProfessionName() != null && !msUser.getProfessionName().isBlank();
+    private String inferAndValidateRole(String role, String professionName) {
+        boolean hasProfession = professionName != null && !professionName.isBlank();
 
         boolean isDoctorCandidate = hasProfession;
         boolean isPatientCandidate = !hasProfession;
 
-        String declaredRole = msUser.getRole() != null ? msUser.getRole().trim().toLowerCase() : null;
+        String declaredRole = role != null ? role.trim().toLowerCase() : null;
 
         if (declaredRole != null) {
             switch (declaredRole) {
@@ -164,5 +201,18 @@ public class KeycloakService {
 
         throw new IllegalArgumentException("not handled error in registering user");
     }
+
+    private String getKeycloakIdFromResponse(ResponseEntity<Object> response) {
+        String[] stringArray = response.getHeaders().get("location").get(0).split("/");
+        return stringArray[stringArray.length - 1];
+    }
+
+    private RoleRepresentation convertToRoleRepresentation(LinkedHashMap<String, String> rawRole) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(rawRole.get("name"));
+        role.setId(rawRole.get("id"));
+        return role;
+    }
+
 
 }

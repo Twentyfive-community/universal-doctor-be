@@ -27,8 +27,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .requestMatchers("/profession/**").permitAll()
-                        .requestMatchers("/keycloak/login",
-                                         "keycloak/register")
+                        .requestMatchers("/keycloak/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
