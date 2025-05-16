@@ -68,5 +68,13 @@ public class KeycloakRoute extends RouteBuilder {
                 .toD(url + "/reset-password?email=${body}")
                 .convertBodyTo(String.class);
 
+        from("direct:updateUser")
+                .routeId("update-user-route")
+                .log(LoggingLevel.INFO,"Calling update with this request = ${body}")
+                .marshal().json()
+                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
+                .toD(url + "/update")
+                .convertBodyTo(String.class);
+
     }
 }

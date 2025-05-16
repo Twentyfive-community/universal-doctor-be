@@ -27,8 +27,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .requestMatchers("/profession/**").permitAll()
-                        .requestMatchers("/keycloak/**")
-                        .permitAll()
+                        .requestMatchers("/keycloak/update").hasAnyRole("admin","patient","doctor")
+                        .requestMatchers("/keycloak/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->

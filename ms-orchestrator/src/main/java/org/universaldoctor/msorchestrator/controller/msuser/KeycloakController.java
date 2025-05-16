@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import request.keycloak.AddMsUserReq;
 import request.keycloak.TokenRequest;
+import request.keycloak.UpdateMsUserReq;
 import response.ResponseWrapper;
 
 @RestController
@@ -31,5 +32,10 @@ public class KeycloakController extends BaseController {
     public ResponseEntity<ResponseWrapper<Void>> resetPassword(@RequestParam("email") String email){
         producerTemplate.requestBody("direct:resetPassword",email,String.class);
         return noContent("email reset password sent successfully");
+    }
+    @PutMapping("/update")
+    public ResponseEntity<ResponseWrapper<Void>> updateUser(@RequestBody UpdateMsUserReq msUser){
+        producerTemplate.requestBody("direct:updateUser",msUser,String.class);
+        return noContent("User Updated Succesfully");
     }
 }
