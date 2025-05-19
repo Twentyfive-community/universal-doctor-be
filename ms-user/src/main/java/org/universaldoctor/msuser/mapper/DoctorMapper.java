@@ -1,27 +1,22 @@
 package org.universaldoctor.msuser.mapper;
 
-import enums.Sex;
 import model.Doctor;
+import model.MsUser;
 import model.Profession;
-import org.springframework.stereotype.Service;
+import org.mapstruct.*;
 import request.keycloak.AddMsUserReq;
+import request.keycloak.UpdateMsUserReq;
 
-@Service
-public class DoctorMapper {
-    public Doctor mapAddMsUserReqToDoctor(AddMsUserReq msUser, Profession profession) {
-        Doctor doctor = new Doctor();
-        doctor.setFirstName(msUser.getFirstName());
-        doctor.setLastName(msUser.getLastName());
-        doctor.setPhoneNumber(msUser.getPhoneNumber());
-        doctor.setAddress(msUser.getAddress());
-        doctor.setSex(Sex.valueOf(msUser.getSex()));
-        doctor.setTaxCode(msUser.getTaxCode());
-        doctor.setActive(false);
-        doctor.setEmail(msUser.getEmail());
-        doctor.setNationality(msUser.getNationality());
-        doctor.setAccepted(false);
-        doctor.setProfession(profession);
-        doctor.setHourlyRate(msUser.getHourlyRate());
-        return doctor;
-    }
+@Mapper(componentModel = "spring")
+public interface DoctorMapper {
+
+    @Mapping(target = "active", constant = "false")
+    @Mapping(target = "accepted", constant = "false")
+    @Mapping(target = "profession", source = "profession")
+    Doctor mapAddMsUserReqToDoctor(AddMsUserReq msUser, Profession profession);
+
+    @Mapping(target = "profession", source = "profession")
+    @Mapping(target = "id", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateDoctorFromUpdateMsUserReq(UpdateMsUserReq dto, @MappingTarget Doctor doctor, Profession profession);
 }

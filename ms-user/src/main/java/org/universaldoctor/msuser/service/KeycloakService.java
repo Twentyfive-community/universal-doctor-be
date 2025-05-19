@@ -1,6 +1,5 @@
 package org.universaldoctor.msuser.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.KeycloakUser;
 import exception.TokenRetrievalException;
 import lombok.extern.slf4j.Slf4j;
@@ -9,67 +8,53 @@ import model.MsUser;
 import model.Patient;
 import model.Profession;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.universaldoctor.msuser.client.KeycloakClient;
 import org.universaldoctor.msuser.mapper.DoctorMapper;
 import org.universaldoctor.msuser.mapper.KeycloakMapper;
 import org.universaldoctor.msuser.mapper.PatientMapper;
-import request.keycloak.AddMsUserReq;
-import request.keycloak.TokenRequest;
+import request.keycloak.*;
+import response.keycloak.LoginRes;
 
-import java.nio.file.AccessDeniedException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Slf4j
 public class KeycloakService {
-    @Autowired
-    private KeycloakClient keycloakClient;
 
-    @Autowired
-    private PatientService patientService;
-    @Autowired
-    private ProfessionService professionService;
-    @Autowired
-    private DoctorService doctorService;
+    private final KeycloakClient keycloakClient;
+    private final PatientService patientService;
+    private final ProfessionService professionService;
+    private final DoctorService doctorService;
+    private final KeycloakMapper keycloakMapper;
+    private final PatientMapper patientMapper;
+    private final DoctorMapper doctorMapper;
 
-    @Autowired
-    private KeycloakMapper keycloakMapper;
-    @Autowired
-    private PatientMapper patientMapper;
-    @Autowired
-    private DoctorMapper doctorMapper;
 
-    @Value("${keycloak.clientId}")
-    protected String clientId;
-    @Value("${keycloak.credentials.secret}")
-    protected String clientSecret;
-    @Value("${keycloak.username}")
-    protected String username;
-    @Value("${keycloak.password}")
-    protected String password;
-    @Value("${keycloak.password}")
-    protected String grantType;
-
-    public String getAdminBearerToken() {
-        TokenRequest tokenRequest = new TokenRequest(clientId, clientSecret, grantType, username, password);
-        return "Bearer " + getToken(tokenRequest);
+    public KeycloakService(KeycloakClient keycloakClient, PatientService patientService, ProfessionService professionService, DoctorService doctorService, KeycloakMapper keycloakMapper, PatientMapper patientMapper, DoctorMapper doctorMapper) {
+        this.keycloakClient = keycloakClient;
+        this.patientService = patientService;
+        this.professionService = professionService;
+        this.doctorService = doctorService;
+        this.keycloakMapper = keycloakMapper;
+        this.patientMapper = patientMapper;
+        this.doctorMapper = doctorMapper;
     }
 
-    public String getToken(TokenRequest tokenRequest) {
-        log.info("request: {}", tokenRequest);
-        try {
-            Object response = keycloakClient.getToken(tokenRequest);
+    public String getAdminBearerToken() {
+        LoginMsUserReq loginMsUserReq = new LoginMsUserReq("adminrealm","password");
+        return "Bearer " + getToken(loginMsUserReq).getAccessToken();
+    }
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map responseMap = objectMapper.convertValue(response, Map.class);
-            return (String) responseMap.get("access_token");
+    public LoginRes getToken(LoginMsUserReq loginMsUserReq) {
+        log.info("request: {}", loginMsUserReq);
+        try {
+            TokenRequest tokenRequest = keycloakMapper.loginRequestToTokenRequest(loginMsUserReq);
+            return keycloakClient.getToken(tokenRequest);
         } catch (Exception e) {
             log.error("error retrieving access token", e);
             throw new TokenRetrievalException(e.getMessage());
@@ -77,51 +62,151 @@ public class KeycloakService {
 
     }
 
-
-    public Boolean addMsUser(AddMsUserReq msUser) {
-        String role ="";
-        if ((msUser.getProfessionName() == null || msUser.getProfessionName().isBlank()) && msUser.getHourlyRate() == null) {
-            role = "patient";
-            Patient patient = patientMapper.mapAddMsUserReqToPatient(msUser);
-            addMsUserToRealm(patient,role);
-            return patientService.save(patient) != null;
-        } else {
-            //role ="doctor";
-            Profession profession = professionService.findByName(msUser.getProfessionName());
-            Doctor doctor = doctorMapper.mapAddMsUserReqToDoctor(msUser, profession);
-            //addMsUserToRealm(doctor,role);
-            return doctorService.save(doctor) != null;
+    public LoginRes refreshToken(RefreshTokenReq refreshTokenReq) {
+        log.info("request: {}", refreshTokenReq);
+        try {
+            RefreshLoginReq refreshLoginReq = keycloakMapper.refreshTokenRequestToRefreshLoginRequest(refreshTokenReq);
+            return keycloakClient.getRefreshToken(refreshLoginReq);
+        } catch (Exception e) {
+            log.error("error retrieving access token", e);
+            throw new TokenRetrievalException(e.getMessage());
         }
     }
 
-    public void addMsUserToRealm(MsUser msUser, String role) {
+    public void resetPasswordFromEmail(String email){
+        log.info("sending reset password request to email: {}", email);
+        String keycloakId = patientService.findKeycloakIdByEmail(email);
+        List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
+        keycloakClient.resetPassword(getAdminBearerToken(),keycloakId,actions);
+    }
+
+    @Transactional
+    public void addMsUser(AddMsUserReq msUser) {
+        log.info("request: {}", msUser);
+
+        String role = inferAndValidateRole(msUser.getRole(), msUser.getProfessionName());
+
+        switch (role) {
+            case "patient" -> {
+                log.info("Adding patient: {}", msUser);
+                Patient patient = patientMapper.mapAddMsUserReqToPatient(msUser);
+                addMsUserToRealm(patient, role);
+                patientService.save(patient);
+            }
+            case "doctor" -> {
+                log.info("Adding doctor: {}", msUser);
+                Profession profession = professionService.findByName(msUser.getProfessionName());
+                Doctor doctor = doctorMapper.mapAddMsUserReqToDoctor(msUser, profession);
+                addMsUserToRealm(doctor, role);
+                doctorService.save(doctor);
+            }
+            default -> throw new IllegalStateException("Unexpected role: " + role);
+        }
+    }
+
+    @Transactional
+    public void updateUser(UpdateMsUserReq msUser) {
+        log.info("request: {}", msUser);
+
+        switch (msUser.getRole()) {
+            case "patient" -> {
+                log.info("Updating patient: {}", msUser);
+                Patient patient = patientService.findByEmail(msUser.getEmail());
+                patientMapper.updateMsUserFromUpdateMsUserReq(msUser,patient);
+                updateMsUserToRealm(patient);
+                patientService.save(patient);
+            }
+            case "doctor" -> {
+                Profession profession;
+                log.info("Updating doctor: {}", msUser);
+                Doctor doctor = doctorService.findByEmail(msUser.getEmail());
+                if(msUser.getProfessionName()== null || msUser.getProfessionName().isBlank()){
+                    profession = doctor.getProfession();
+                } else {
+                    profession = professionService.findByName(msUser.getProfessionName());
+                }
+                doctorMapper.updateDoctorFromUpdateMsUserReq(msUser,doctor, profession);
+                updateMsUserToRealm(doctor);
+                doctorService.save(doctor);
+            }
+            default -> throw new IllegalStateException("Unexpected role: " + msUser.getRole());
+        }
+    }
+
+    private void addMsUserToRealm(MsUser msUser, String role) {
+        log.info("adding user to realm: {}", msUser);
         String bearerToken = getAdminBearerToken();
-        KeycloakUser keycloakUser = keycloakMapper.createOrUpdateMsUserToRealm(msUser);
+        KeycloakUser keycloakUser = keycloakMapper.msUserToKeycloakUser(msUser);
         ResponseEntity<Object> response = keycloakClient.add(bearerToken, keycloakUser);
-        String keycloakId = keycloakMapper.getKeycloakIdFromResponse(response);
+        String keycloakId = getKeycloakIdFromResponse(response);
         addRoleToUser(bearerToken, keycloakId,role);
         sendPasswordResetEmail(keycloakId);
         msUser.setKeycloakId(keycloakId);
     }
 
-    public void addRoleToUser(String bearerToken,String keycloakId,String role) {
+    private void updateMsUserToRealm(MsUser msUser) {
+        log.info("updating user to realm: {}", msUser);
+        String bearerToken = getAdminBearerToken();
+        KeycloakUser keycloakUser = keycloakMapper.msUserToKeycloakUser(msUser);
+        keycloakClient.update(bearerToken, msUser.getKeycloakId(), keycloakUser);
+    }
+
+    private void addRoleToUser(String bearerToken,String keycloakId,String role) {
+        log.info("adding role to user with keycloakId: {}", keycloakId);
         List<LinkedHashMap<String, String>> rawRoles = keycloakClient.getRoles(bearerToken);
         List<RoleRepresentation> keycloakRoles = rawRoles.stream()
-                .map(KeycloakMapper::convertToRoleRepresentation)
-                .filter(keycloakRole -> keycloakRole.getName().equals(role)) // Filtra il ruolo specifico
+                .map(this::convertToRoleRepresentation)
+                .filter(keycloakRole -> keycloakRole.getName().equals(role))
                 .toList();
         keycloakClient.addRoleToUser(bearerToken, keycloakId, keycloakRoles);
     }
 
-    public boolean sendPasswordResetEmail(String keycloakId) {
+    private void sendPasswordResetEmail(String keycloakId) {
+        log.info("sending password reset email for keycloakId: {}", keycloakId);
         String bearerToken = getAdminBearerToken();
-        // Define the actions to be executed, in this case, UPDATE_PASSWORD
         List<String> actions = Collections.singletonList("UPDATE_PASSWORD");
-
-        // Call the Feign client method to send the reset email
         keycloakClient.resetPassword(bearerToken, keycloakId, actions);
-        return true;
     }
 
+    private String inferAndValidateRole(String role, String professionName) {
+        boolean hasProfession = professionName != null && !professionName.isBlank();
+
+        boolean isDoctorCandidate = hasProfession;
+        boolean isPatientCandidate = !hasProfession;
+
+        String declaredRole = role != null ? role.trim().toLowerCase() : null;
+
+        if (declaredRole != null) {
+            switch (declaredRole) {
+                case "doctor":
+                    if (!isDoctorCandidate)
+                        throw new IllegalArgumentException("doctor needs to have a profession");
+                    return "doctor";
+                case "patient":
+                    if (!isPatientCandidate)
+                        throw new IllegalArgumentException("patient doesn't have a profession");
+                    return "patient";
+                default:
+                    throw new IllegalArgumentException("not recognizable role: " + declaredRole);
+            }
+        }
+
+        if (isDoctorCandidate) return "doctor";
+        if (isPatientCandidate) return "patient";
+
+        throw new IllegalArgumentException("not handled error in registering user");
+    }
+
+    private String getKeycloakIdFromResponse(ResponseEntity<Object> response) {
+        String[] stringArray = response.getHeaders().get("location").get(0).split("/");
+        return stringArray[stringArray.length - 1];
+    }
+
+    private RoleRepresentation convertToRoleRepresentation(LinkedHashMap<String, String> rawRole) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(rawRole.get("name"));
+        role.setId(rawRole.get("id"));
+        return role;
+    }
 
 }

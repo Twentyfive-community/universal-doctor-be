@@ -17,7 +17,7 @@ public class SecurityConfig {
         jwtConverter.setJwtGrantedAuthoritiesConverter(new KeycloakRealmRoleConverter());
 
         http
-                .csrf().disable() // <--- AGGIUNGI QUESTO
+                .csrf().disable()
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/webjars/**").permitAll()
                         .requestMatchers("/favicon.ico").permitAll()
@@ -27,9 +27,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .requestMatchers("/profession/**").permitAll()
-                        .requestMatchers("/keycloak/login",
-                                         "keycloak/register")
-                        .permitAll()
+                        .requestMatchers("/keycloak/update").hasAnyRole("admin","patient","doctor")
+                        .requestMatchers("/keycloak/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 ->
