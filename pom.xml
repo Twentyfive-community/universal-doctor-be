@@ -12,6 +12,7 @@
         <module>model</module>
         <module>ms-user</module>
         <module>ms-orchestrator</module>
+        <module>ms-videochat</module>
     </modules>
 
     <dependencyManagement>
