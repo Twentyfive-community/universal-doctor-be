@@ -5,10 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.universaldoctor.msuser.service.KeycloakService;
-import request.keycloak.AddMsUserReq;
-import request.keycloak.LoginMsUserReq;
-import request.keycloak.TokenRequest;
-import request.keycloak.UpdateMsUserReq;
+import request.keycloak.*;
 import response.ResponseWrapper;
 import response.keycloak.LoginRes;
 
@@ -23,7 +20,11 @@ public class KeycloakController extends BaseController {
     @PostMapping("/login")
     public ResponseEntity<ResponseWrapper<LoginRes>> login(@RequestBody LoginMsUserReq loginMsUserReq) {
         return ok(keycloakService.getToken(loginMsUserReq), "Login successful");
+    }
 
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ResponseWrapper<LoginRes>> refreshToken(@RequestBody RefreshTokenReq refreshTokenReq) {
+        return ok(keycloakService.refreshToken(refreshTokenReq), "Refresh token successful");
     }
 
     @PostMapping("/register")

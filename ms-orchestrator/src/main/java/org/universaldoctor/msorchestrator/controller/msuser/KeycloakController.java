@@ -4,10 +4,7 @@ import dto.BaseController;
 import org.apache.camel.ProducerTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import request.keycloak.AddMsUserReq;
-import request.keycloak.LoginMsUserReq;
-import request.keycloak.TokenRequest;
-import request.keycloak.UpdateMsUserReq;
+import request.keycloak.*;
 import response.ResponseWrapper;
 
 @RestController
@@ -23,6 +20,12 @@ public class KeycloakController extends BaseController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginMsUserReq loginMsUserReq){
         return ResponseEntity.ok(producerTemplate.requestBody("direct:login", loginMsUserReq, String.class));
+
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken(@RequestBody RefreshTokenReq refreshTokenReq){
+        return ResponseEntity.ok(producerTemplate.requestBody("direct:refreshToken", refreshTokenReq, String.class));
 
     }
     @PostMapping("/register")

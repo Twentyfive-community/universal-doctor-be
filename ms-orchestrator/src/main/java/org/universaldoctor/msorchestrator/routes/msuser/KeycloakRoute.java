@@ -52,6 +52,15 @@ public class KeycloakRoute extends RouteBuilder {
                 .to(url+"/login")
                 .log(LoggingLevel.INFO, "Keycloak token retrieved");
 
+        from("direct:refreshToken")
+                .routeId("refresh-token-route")
+                .log(LoggingLevel.INFO,"Calling refresh token with this request = ${body}")
+                .marshal().json()
+                .setHeader(Exchange.HTTP_METHOD, constant("POST"))
+                .setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
+                .toD(url + "/refresh-token")
+                .convertBodyTo(String.class);
+
         from("direct:register")
                 .routeId("msuser-register")
                 .log(LoggingLevel.INFO, "Keycloak registering with ${body}")

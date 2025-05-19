@@ -1,6 +1,5 @@
 package org.universaldoctor.msuser.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.KeycloakUser;
 import exception.TokenRetrievalException;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +8,6 @@ import model.MsUser;
 import model.Patient;
 import model.Profession;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,16 +15,12 @@ import org.universaldoctor.msuser.client.KeycloakClient;
 import org.universaldoctor.msuser.mapper.DoctorMapper;
 import org.universaldoctor.msuser.mapper.KeycloakMapper;
 import org.universaldoctor.msuser.mapper.PatientMapper;
-import request.keycloak.AddMsUserReq;
-import request.keycloak.LoginMsUserReq;
-import request.keycloak.TokenRequest;
-import request.keycloak.UpdateMsUserReq;
+import request.keycloak.*;
 import response.keycloak.LoginRes;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @Slf4j
@@ -66,6 +60,17 @@ public class KeycloakService {
             throw new TokenRetrievalException(e.getMessage());
         }
 
+    }
+
+    public LoginRes refreshToken(RefreshTokenReq refreshTokenReq) {
+        log.info("request: {}", refreshTokenReq);
+        try {
+            RefreshLoginReq refreshLoginReq = keycloakMapper.refreshTokenRequestToRefreshLoginRequest(refreshTokenReq);
+            return keycloakClient.getRefreshToken(refreshLoginReq);
+        } catch (Exception e) {
+            log.error("error retrieving access token", e);
+            throw new TokenRetrievalException(e.getMessage());
+        }
     }
 
     public void resetPasswordFromEmail(String email){
@@ -203,6 +208,5 @@ public class KeycloakService {
         role.setId(rawRole.get("id"));
         return role;
     }
-
 
 }
