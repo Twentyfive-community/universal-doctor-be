@@ -2,6 +2,7 @@ package org.universaldoctor.msorchestrator.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,7 +27,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**")
                         .permitAll()
-                        .requestMatchers("/profession/**").permitAll()
+                        .requestMatchers("/profession/**").hasRole("admin")
                         .requestMatchers("/keycloak/update").hasAnyRole("admin","patient","doctor")
                         .requestMatchers("/keycloak/**").permitAll()
                         .anyRequest().authenticated()
