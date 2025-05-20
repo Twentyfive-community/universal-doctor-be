@@ -5,8 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import request.profession.AddProfessionReq;
 import request.profession.UpdateProfessionReq;
-import response.ResponseWrapper;
-import response.profession.GetByNameProfessionRes;
 
 @RestController
 @RequestMapping("/profession")
@@ -39,8 +37,8 @@ public class ProfessionController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<String> getAll(@RequestParam(defaultValue = "true", name = "enabled") boolean enabled) {
-        return ResponseEntity.ok(producerTemplate.requestBody("direct:getAll", enabled, String.class));
+    public ResponseEntity<String> getAll(@RequestParam(defaultValue = "true", name = "active") boolean active) {
+        return ResponseEntity.ok(producerTemplate.requestBody("direct:getAll", active, String.class));
     }
 }
 
