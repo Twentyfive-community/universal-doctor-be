@@ -37,6 +37,10 @@ public class KeycloakController extends BaseController {
         producerTemplate.requestBody("direct:resetPassword",email,String.class);
         return noContent("email reset password sent successfully");
     }
+    @PutMapping("/accept-doctor")
+    public ResponseEntity<String> acceptDoctor(@RequestParam("email") String email){
+        return ResponseEntity.ok(producerTemplate.requestBody("direct:acceptDoctor",email,String.class));
+    }
     @PutMapping("/update")
     public ResponseEntity<ResponseWrapper<Void>> updateUser(@RequestBody UpdateMsUserReq msUser){
         producerTemplate.requestBody("direct:updateUser",msUser,String.class);

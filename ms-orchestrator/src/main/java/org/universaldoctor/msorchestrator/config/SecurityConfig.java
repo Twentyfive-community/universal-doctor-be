@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**")
                         .permitAll()
                         .requestMatchers("/profession/**").hasRole("admin")
+                        .requestMatchers("/keycloak/update").hasRole("admin")
                         .requestMatchers("/keycloak/update").hasAnyRole("admin","patient","doctor")
                         .requestMatchers("/keycloak/**").permitAll()
                         .anyRequest().authenticated()

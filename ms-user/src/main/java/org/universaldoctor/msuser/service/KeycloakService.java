@@ -1,6 +1,7 @@
 package org.universaldoctor.msuser.service;
 
 import dto.KeycloakUser;
+import exception.DoctorAlreadyAcceptedException;
 import exception.TokenRetrievalException;
 import lombok.extern.slf4j.Slf4j;
 import model.Doctor;
@@ -8,6 +9,7 @@ import model.MsUser;
 import model.Patient;
 import model.Profession;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,6 +82,7 @@ public class KeycloakService {
         keycloakClient.resetPassword(getAdminBearerToken(),keycloakId,actions);
     }
 
+
     @Transactional
     public void addMsUser(AddMsUserReq msUser) {
         log.info("request: {}", msUser);
@@ -130,6 +133,20 @@ public class KeycloakService {
                 doctorService.save(doctor);
             }
             default -> throw new IllegalStateException("Unexpected role: " + msUser.getRole());
+        }
+    }
+
+
+    @Transactional
+    public void acceptDoctor(String email) {
+        Doctor doctor = doctorService.findByEmail(email);
+        if (doctor.getAccepted().equals(false)) {
+            doctor.setAccepted(true);
+            updateMsUserToRealm(doctor);
+
+            doctorService.save(doctor);
+        } else {
+            throw new DoctorAlreadyAcceptedException("this doctor: "+doctor+" is already accepted. Did you mean set him active?");
         }
     }
 
@@ -208,5 +225,4 @@ public class KeycloakService {
         role.setId(rawRole.get("id"));
         return role;
     }
-
 }

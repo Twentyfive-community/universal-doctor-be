@@ -45,4 +45,10 @@ public class KeycloakController extends BaseController {
         return noContent("User Updated Succesfully");
     }
 
+    @PutMapping("/accept-doctor")
+    public ResponseEntity<ResponseWrapper<Void>> acceptDoctor(@RequestParam("email") String email){
+        keycloakService.acceptDoctor(email);
+        return noContent("Doctor Accepted Succesfully");
+    }
+
 }

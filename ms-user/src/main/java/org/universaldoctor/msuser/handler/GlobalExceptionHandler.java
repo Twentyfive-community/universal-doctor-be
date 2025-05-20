@@ -1,5 +1,6 @@
 package org.universaldoctor.msuser.handler;
 
+import exception.DoctorAlreadyAcceptedException;
 import exception.TokenRetrievalException;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.http.protocol.HTTP;
@@ -28,6 +29,14 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getMessage());
         body.put("code", 404);
         return ResponseEntity.status(404).body(body);
+    }
+
+    @ExceptionHandler(DoctorAlreadyAcceptedException.class)
+    public ResponseEntity<Map<String, Object>> handleDoctorAlreadyAcceptedException(DoctorAlreadyAcceptedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", ex.getMessage());
+        body.put("code", 409);
+        return ResponseEntity.status(409).body(body);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

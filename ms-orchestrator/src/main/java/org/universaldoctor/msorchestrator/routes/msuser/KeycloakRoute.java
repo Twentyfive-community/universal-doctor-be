@@ -85,5 +85,12 @@ public class KeycloakRoute extends RouteBuilder {
                 .toD(url + "/update")
                 .convertBodyTo(String.class);
 
+        from("direct:acceptDoctor")
+                .routeId("accept-doctor-route")
+                .log(LoggingLevel.INFO,"Calling accept doctor with this request = ${body}")
+                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
+                .toD(url + "/accept-doctor?email=${body}")
+                .convertBodyTo(String.class);
+
     }
 }
