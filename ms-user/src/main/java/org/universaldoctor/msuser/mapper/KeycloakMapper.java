@@ -9,7 +9,7 @@ import request.keycloak.*;
 @Mapper(componentModel = "spring")
 public interface KeycloakMapper {
 
-    @Mapping(target = "enabled", constant = "true")
+    @Mapping(target = "enabled", source = "active")
     KeycloakUser msUserToKeycloakUser(MsUser msUser);
 
     @Mapping(target = "client_id", constant = "auth-server")

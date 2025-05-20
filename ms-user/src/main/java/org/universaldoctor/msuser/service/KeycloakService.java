@@ -139,14 +139,43 @@ public class KeycloakService {
 
     @Transactional
     public void acceptDoctor(String email) {
+        log.info("request: {}", email);
         Doctor doctor = doctorService.findByEmail(email);
         if (doctor.getAccepted().equals(false)) {
             doctor.setAccepted(true);
+            doctor.setActive(true);
             updateMsUserToRealm(doctor);
 
             doctorService.save(doctor);
         } else {
             throw new DoctorAlreadyAcceptedException("this doctor: "+doctor+" is already accepted. Did you mean set him active?");
+        }
+    }
+
+    @Transactional
+    public void toggleStatus(ToggleStatusMsUserReq toggleStatusMsUserReq) {
+        log.info("request: {}", toggleStatusMsUserReq);
+        switch (toggleStatusMsUserReq.getRole()) {
+            case "patient" -> {
+                log.info("toggle status patient: {}", toggleStatusMsUserReq);
+                Patient patient = patientService.findByEmail(toggleStatusMsUserReq.getEmail());
+                patient.setActive(!patient.getActive());
+                updateMsUserToRealm(patient);
+                patientService.save(patient);
+            }
+            case "doctor" -> {
+                log.info("toggle status doctor: {}", toggleStatusMsUserReq);
+                Doctor doctor = doctorService.findByEmail(toggleStatusMsUserReq.getEmail());
+
+                if (doctor.getAccepted().equals(false) && doctor.getActive().equals(false)) {
+                    throw new IllegalStateException("can't set active a doctor whom is not accepted!");
+                }
+
+                doctor.setActive(!doctor.getActive());
+                updateMsUserToRealm(doctor);
+                doctorService.save(doctor);
+            }
+            default -> throw new IllegalStateException("Unexpected role: " + toggleStatusMsUserReq.getRole());
         }
     }
 

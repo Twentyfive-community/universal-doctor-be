@@ -92,5 +92,14 @@ public class KeycloakRoute extends RouteBuilder {
                 .toD(url + "/accept-doctor?email=${body}")
                 .convertBodyTo(String.class);
 
+        from("direct:toggleStatusMsUser")
+                .routeId("toggle-status-route")
+                .log(LoggingLevel.INFO,"Calling toggle status with this request = ${body}")
+                .marshal().json()
+                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
+                .toD(url + "/toggle-status")
+                .convertBodyTo(String.class);
+
+
     }
 }

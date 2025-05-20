@@ -72,7 +72,7 @@ public class ProfessionRoute extends RouteBuilder {
                 .toD(url + "/update")
                 .convertBodyTo(String.class);
 
-        from("direct:toggleStatus")
+        from("direct:toggleStatusProfession")
                 .routeId("toggle-profession-route")
                 .log(LoggingLevel.INFO, "Calling toggle-status with this request = ${body}")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))

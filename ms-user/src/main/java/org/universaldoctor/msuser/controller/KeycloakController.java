@@ -45,10 +45,17 @@ public class KeycloakController extends BaseController {
         return noContent("User Updated Succesfully");
     }
 
+    @PutMapping("/toggle-status")
+    public ResponseEntity<ResponseWrapper<Void>> toggleStatus(@RequestBody ToggleStatusMsUserReq toggleStatusMsUserReq){
+        keycloakService.toggleStatus(toggleStatusMsUserReq);
+        return noContent("Toggle Status MsUser done Succesfully");
+    }
+
     @PutMapping("/accept-doctor")
     public ResponseEntity<ResponseWrapper<Void>> acceptDoctor(@RequestParam("email") String email){
         keycloakService.acceptDoctor(email);
         return noContent("Doctor Accepted Succesfully");
     }
+
 
 }

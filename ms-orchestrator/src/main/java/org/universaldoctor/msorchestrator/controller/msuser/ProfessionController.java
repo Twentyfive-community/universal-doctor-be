@@ -28,7 +28,7 @@ public class ProfessionController {
 
     @PutMapping("/toggle-status")
     public ResponseEntity<String> toggleStatus(@RequestParam("professionName") String professionName) {
-        return ResponseEntity.ok(producerTemplate.requestBody("direct:toggleStatus", professionName, String.class));
+        return ResponseEntity.ok(producerTemplate.requestBody("direct:toggleStatusProfession", professionName, String.class));
     }
 
     @GetMapping("/get-by-name")
